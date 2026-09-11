@@ -13,5 +13,9 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  define: {
+    // Expose the backend API URL to the frontend bundle
+    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || '')
   }
 });
