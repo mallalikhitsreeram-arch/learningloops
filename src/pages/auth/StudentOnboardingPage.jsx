@@ -420,7 +420,8 @@ export const StudentOnboardingPage = () => {
       <div style={{
         maxWidth: '680px',
         width: '100%',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'var(--bg-surface)',
+        color: 'var(--text-primary)',
         borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-lg)',
@@ -429,7 +430,7 @@ export const StudentOnboardingPage = () => {
         {/* Header with Brand & Progress Indicator */}
         <div style={{
           padding: '28px 32px 20px',
-          background: 'linear-gradient(180deg, #FAF8F5 0%, #FFFFFF 100%)',
+          background: 'linear-gradient(180deg, var(--bg-surface-subtle) 0%, var(--bg-surface) 100%)',
           borderBottom: '1px solid var(--border-subtle)'
         }}>
           {/* Brand Tagline */}

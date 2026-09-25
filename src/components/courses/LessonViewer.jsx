@@ -403,7 +403,7 @@ export const LessonViewer = ({ course, lesson, onBack, onLessonCompleted, onActi
           ) : selectedVideo ? (
             <div
               style={{
-                background: '#FFFFFF',
+                background: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-md)',
                 padding: '18px',
@@ -414,8 +414,8 @@ export const LessonViewer = ({ course, lesson, onBack, onLessonCompleted, onActi
               {isLowData && (
                 <div
                   style={{
-                    background: '#EFF6FF',
-                    border: '1px solid #BFDBFE',
+                    background: 'var(--accent-primary-light)',
+                    border: '1px solid var(--border-subtle)',
                     padding: '8px 14px',
                     borderRadius: 'var(--radius-sm)',
                     fontSize: '0.78rem',
@@ -603,7 +603,7 @@ export const LessonViewer = ({ course, lesson, onBack, onLessonCompleted, onActi
             /* Empty State: No approved video */
             <div
               style={{
-                background: '#FFFFFF',
+                background: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-md)',
                 padding: '36px 20px',

@@ -250,6 +250,11 @@ app.post('/api/teacher/onboarding', (req, res) => {
   });
 });
 
+// Helper: generate a cryptographically-random 6-digit OTP string
+const generateOTP = () => String(Math.floor(100000 + Math.random() * 900000));
+// OTP validity window (10 minutes)
+const OTP_EXPIRY_MS = 10 * 60 * 1000;
+
 // User Registration with unique role-prefixed IDs (STU1001, TCH1001, PAR1001)
 app.post('/api/auth/register', (req, res) => {
   const { name, email, password, role = 'student', college = 'General Academic', phone = '' } = req.body;
@@ -268,6 +273,9 @@ app.post('/api/auth/register', (req, res) => {
   const uniqueNum = Math.floor(1000 + Math.random() * 9000);
   const newUserId = `${rolePrefix}${uniqueNum}`;
 
+  // Generate real OTP for email verification
+  const otp = generateOTP();
+
   const newUser = {
     id: newUserId,
     name,
@@ -277,7 +285,10 @@ app.post('/api/auth/register', (req, res) => {
     phone,
     role,
     profileCompleted: false,
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+    verificationCode: otp,
+    verificationCodeExpiry: Date.now() + OTP_EXPIRY_MS,
+    verificationAttempts: 0
   };
   db.insert('users', newUser);
 
@@ -308,6 +319,7 @@ app.post('/api/auth/register', (req, res) => {
     success: true,
     unverified: true,
     email: newUser.email,
+    otp,  // Returned to frontend so EmailJS can deliver it
     message: 'Account created! Please verify your email before continuing.'
   });
 });
@@ -315,8 +327,13 @@ app.post('/api/auth/register', (req, res) => {
 // Verify email with code
 app.post('/api/auth/verify-email', (req, res) => {
   const { email, code } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
+  if (!email || !code) {
+    return res.status(400).json({ error: 'Email and verification code are required' });
+  }
+
+  const trimmedCode = code.trim();
+  if (trimmedCode.length !== 6) {
+    return res.status(400).json({ error: 'Please enter a valid 6-digit verification code' });
   }
 
   const user = db.find('users', u => u.email.toLowerCase() === email.trim().toLowerCase());
@@ -324,12 +341,45 @@ app.post('/api/auth/verify-email', (req, res) => {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  // Check code (accept 424242 or 123456 or any 6-digit code for demo testing)
-  if (code && code.trim().length !== 6) {
-    return res.status(400).json({ error: 'Please enter a valid 6-digit verification code' });
+  if (user.email_verified) {
+    // Already verified — just create a session
+    const session = db.createSession(user);
+    return res.json({
+      success: true,
+      message: 'Email already verified.',
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, email_verified: true, phone: user.phone, profileCompleted: user.profileCompleted, avatar: user.avatar },
+      role: user.role,
+      token: session.token
+    });
   }
 
+  // Max 5 attempts per code
+  if ((user.verificationAttempts || 0) >= 5) {
+    return res.status(429).json({ error: 'Too many incorrect attempts. Please request a new verification code.' });
+  }
+
+  // Check expiry
+  if (!user.verificationCodeExpiry || Date.now() > user.verificationCodeExpiry) {
+    return res.status(400).json({ error: 'Verification code has expired. Please request a new one.', expired: true });
+  }
+
+  // Validate code
+  if (!user.verificationCode || user.verificationCode !== trimmedCode) {
+    user.verificationAttempts = (user.verificationAttempts || 0) + 1;
+    db.update('users', user.id, user);
+    const remaining = 5 - user.verificationAttempts;
+    return res.status(400).json({
+      error: remaining > 0
+        ? `Incorrect verification code. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`
+        : 'Too many incorrect attempts. Please request a new verification code.'
+    });
+  }
+
+  // Code is valid — mark verified and clear OTP fields
   user.email_verified = true;
+  user.verificationCode = null;
+  user.verificationCodeExpiry = null;
+  user.verificationAttempts = 0;
   db.update('users', user.id, user);
 
   // Create session for immediate auto-login
@@ -353,32 +403,71 @@ app.post('/api/auth/verify-email', (req, res) => {
   });
 });
 
-// Resend verification code
+// Resend verification code — generates a fresh OTP and returns it so the frontend can send it via EmailJS
 app.post('/api/auth/resend-verification', (req, res) => {
   const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  const user = db.find('users', u => u.email.toLowerCase() === email.trim().toLowerCase());
+  if (!user) {
+    return res.status(404).json({ error: 'No account found with this email.' });
+  }
+
+  if (user.email_verified) {
+    return res.json({ success: true, message: 'Email is already verified.' });
+  }
+
+  // Issue a fresh OTP, reset attempt counter
+  const otp = generateOTP();
+  user.verificationCode = otp;
+  user.verificationCodeExpiry = Date.now() + OTP_EXPIRY_MS;
+  user.verificationAttempts = 0;
+  db.update('users', user.id, user);
+
   res.json({
     success: true,
-    message: `Verification code sent to ${email}. Demo code: 424242`
+    otp,  // Returned to frontend so EmailJS can re-deliver it
+    message: `A new verification code has been sent to ${email}.`
   });
 });
 
-// Forgot password request
+// Forgot password request — generates a reset OTP and returns it so the frontend sends it via EmailJS
 app.post('/api/auth/forgot-password', (req, res) => {
   const { email } = req.body;
-  const user = db.find('users', u => u.email.toLowerCase() === (email || '').trim().toLowerCase());
-  if (!user) {
-    return res.status(404).json({ error: 'No account found with this email address.' });
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
   }
+
+  const user = db.find('users', u => u.email.toLowerCase() === email.trim().toLowerCase());
+  if (!user) {
+    // Return a generic success to prevent email enumeration
+    return res.json({ success: true, message: `If an account exists for ${email}, a reset code has been sent.` });
+  }
+
+  // Generate and store a fresh reset OTP
+  const otp = generateOTP();
+  user.resetCode = otp;
+  user.resetCodeExpiry = Date.now() + OTP_EXPIRY_MS;
+  user.resetAttempts = 0;
+  db.update('users', user.id, user);
+
   res.json({
     success: true,
-    message: `Password reset instructions sent to ${email}. Use reset code: 424242`
+    otp,  // Returned to frontend so EmailJS can deliver the reset code
+    message: `Password reset code has been sent to ${email}.`
   });
 });
 
-// Reset password with code
+// Reset password with code — validates the stored OTP before updating the password
 app.post('/api/auth/reset-password', (req, res) => {
   const { email, code, newPassword } = req.body;
-  const user = db.find('users', u => u.email.toLowerCase() === (email || '').trim().toLowerCase());
+  if (!email || !code || !newPassword) {
+    return res.status(400).json({ error: 'Email, reset code, and new password are required.' });
+  }
+
+  const user = db.find('users', u => u.email.toLowerCase() === email.trim().toLowerCase());
   if (!user) {
     return res.status(404).json({ error: 'User not found.' });
   }
@@ -386,8 +475,35 @@ app.post('/api/auth/reset-password', (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 6 characters.' });
   }
 
+  // Max 5 attempts
+  if ((user.resetAttempts || 0) >= 5) {
+    return res.status(429).json({ error: 'Too many incorrect attempts. Please request a new reset code.' });
+  }
+
+  // Check expiry
+  if (!user.resetCodeExpiry || Date.now() > user.resetCodeExpiry) {
+    return res.status(400).json({ error: 'Reset code has expired. Please request a new one.', expired: true });
+  }
+
+  // Validate code
+  if (!user.resetCode || user.resetCode !== code.trim()) {
+    user.resetAttempts = (user.resetAttempts || 0) + 1;
+    db.update('users', user.id, user);
+    const remaining = 5 - user.resetAttempts;
+    return res.status(400).json({
+      error: remaining > 0
+        ? `Incorrect reset code. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`
+        : 'Too many incorrect attempts. Please request a new reset code.'
+    });
+  }
+
+  // Code valid — update password and clear reset fields
   user.password = newPassword;
+  user.resetCode = null;
+  user.resetCodeExpiry = null;
+  user.resetAttempts = 0;
   db.update('users', user.id, user);
+
   res.json({
     success: true,
     message: 'Password has been reset successfully! You can now log in.'
@@ -3183,10 +3299,14 @@ app.get('/api/interview/history/:userId', authenticateToken, (req, res) => {
   res.json(reports);
 });
 
-// Start Express server
-app.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(`  LEARNING LOOPS BACKEND SERVER RUNNING ON PORT ${PORT}`);
-  console.log(`  WHERE YOUR EVERY CONTRIBUTION COUNTS`);
-  console.log(`====================================================`);
-});
+// Start Express server if run directly (local / container mode)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`====================================================`);
+    console.log(`  LEARNING LOOPS BACKEND SERVER RUNNING ON PORT ${PORT}`);
+    console.log(`  WHERE YOUR EVERY CONTRIBUTION COUNTS`);
+    console.log(`====================================================`);
+  });
+}
+
+export default app;

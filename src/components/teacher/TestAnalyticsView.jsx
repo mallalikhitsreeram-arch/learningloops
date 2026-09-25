@@ -544,7 +544,7 @@ export const TestAnalyticsView = () => {
                   </h5>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '240px', overflowY: 'auto' }}>
                     {targetedPracticeDraft.questions.map((q, i) => (
-                      <div key={i} style={{ padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: '#fff' }}>
+                      <div key={i} style={{ padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)' }}>
                         <div style={{ fontWeight: '700', fontSize: '0.82rem', marginBottom: '4px' }}>
                           {i + 1}. {q.question}
                         </div>

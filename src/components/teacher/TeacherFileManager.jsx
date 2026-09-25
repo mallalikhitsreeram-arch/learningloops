@@ -442,7 +442,7 @@ export const TeacherFileManager = () => {
                       padding: '12px 16px',
                       borderRadius: 'var(--radius-md)',
                       border: '1px solid var(--border-subtle)',
-                      background: '#fff',
+                      background: 'var(--bg-surface)',
                       transition: 'all 0.15s ease'
                     }}
                   >

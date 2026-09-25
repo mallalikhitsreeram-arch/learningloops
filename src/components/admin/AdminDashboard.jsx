@@ -225,7 +225,7 @@ export const AdminDashboard = () => {
         </div>
 
         <div className="content-card" style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-md)', background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D97706' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-md)', background: 'var(--accent-amber-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-amber)' }}>
             <Activity size={20} />
           </div>
           <div>
@@ -374,7 +374,8 @@ export const AdminDashboard = () => {
                   border: '1px solid var(--border-subtle)',
                   fontSize: '0.82rem',
                   fontWeight: '600',
-                  background: '#FFFFFF'
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-primary)'
                 }}
               >
                 <option value="all">All Roles</option>
@@ -435,7 +436,8 @@ export const AdminDashboard = () => {
                           borderRadius: 'var(--radius-sm)',
                           border: '1px solid var(--border-subtle)',
                           fontSize: '0.75rem',
-                          background: '#fff'
+                          background: 'var(--bg-surface)',
+                          color: 'var(--text-primary)'
                         }}
                       >
                         <option value="student">Student</option>

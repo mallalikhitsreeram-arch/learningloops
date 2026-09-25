@@ -134,7 +134,7 @@ export const AiAssistantModal = ({ onClose, onNavigateToPractice }) => {
                   <div style={{ marginTop: '10px' }}>
                     <button
                       className="btn-primary"
-                      style={{ padding: '6px 12px', fontSize: '0.78rem', background: '#fff', color: 'var(--accent-primary)' }}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', background: 'var(--bg-surface)', color: 'var(--accent-primary)', border: '1px solid var(--border-subtle)' }}
                       onClick={() => {
                         onClose();
                         if (onNavigateToPractice) onNavigateToPractice(m.actionTopic);

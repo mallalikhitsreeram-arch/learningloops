@@ -140,7 +140,7 @@ export const PracticeView = ({ initialTopic = null }) => {
                 padding: '12px 16px',
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--border-subtle)',
-                background: '#fff',
+                background: 'var(--bg-surface)',
                 cursor: isAnswerSubmitted ? 'default' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',

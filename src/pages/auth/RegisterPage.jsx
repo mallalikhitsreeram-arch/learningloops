@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserPlus, Mail, Lock, User, GraduationCap, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { sendOTPEmail } from '../../utils/emailService.js';
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
@@ -26,6 +27,11 @@ export const RegisterPage = () => {
     setIsSubmitting(false);
 
     if (res.success && res.unverified) {
+      // Deliver OTP via EmailJS — backend already generated and stored it
+      if (res.otp) {
+        await sendOTPEmail(res.email, res.otp);
+        // Note: we navigate regardless of EmailJS result so the user can request a resend on the next page
+      }
       navigate(`/verify-email?email=${encodeURIComponent(res.email)}`);
     } else {
       setErrorMessage(res.error || 'Registration failed.');
@@ -44,7 +50,8 @@ export const RegisterPage = () => {
       <div style={{
         maxWidth: '480px',
         width: '100%',
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--bg-surface)',
+        color: 'var(--text-primary)',
         borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-lg)',
@@ -152,7 +159,7 @@ export const RegisterPage = () => {
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: '0.88rem', background: '#fff' }}
+                style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: '0.88rem', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
               >
                 <option value="student">Student</option>
                 <option value="teacher">Teacher / Faculty</option>

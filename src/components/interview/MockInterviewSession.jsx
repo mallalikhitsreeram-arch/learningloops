@@ -662,7 +662,7 @@ export const MockInterviewSession = ({ onBackToLab, initialTopic = 'General Tech
               <div style={{
                 padding: '12px 14px',
                 borderRadius: 'var(--radius-sm)',
-                backgroundColor: '#fff',
+                backgroundColor: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
@@ -690,7 +690,7 @@ export const MockInterviewSession = ({ onBackToLab, initialTopic = 'General Tech
               <div style={{
                 padding: '12px 14px',
                 borderRadius: 'var(--radius-sm)',
-                backgroundColor: '#fff',
+                backgroundColor: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
@@ -716,7 +716,7 @@ export const MockInterviewSession = ({ onBackToLab, initialTopic = 'General Tech
 
               {/* Audio Visualizer Meter */}
               {isMicActive && (
-                <div style={{ padding: '8px 12px', background: '#fff', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ padding: '8px 12px', background: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '4px' }}>
                     <span>Mic Sensitivity Test</span>
                     <span>{audioLevel > 10 ? 'Speaking Detected' : 'Quiet'}</span>

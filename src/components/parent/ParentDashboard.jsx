@@ -4,20 +4,19 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { ActivityCalendar } from '../dashboard/ActivityCalendar.jsx';
 
 export const ParentDashboard = ({ activeTab = 'parent_dashboard' }) => {
-  const { currentUser, getAuthHeaders, switchRole } = useAuth();
+  const { currentUser, getAuthHeaders } = useAuth();
   const [parentData, setParentData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
-  useEffect(() => {
-    const fetchParentProgress = async () => {
-      setIsLoading(true);
-      setLoadError(null);
-      try {
-        const parentId = currentUser?.role === 'parent' ? currentUser.id : 'usr-parent-1';
-        const res = await fetch(`/api/parent/child-progress/${parentId}`, {
-          headers: getAuthHeaders()
-        });
+  const fetchParentProgress = async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const parentId = currentUser?.role === 'parent' ? currentUser.id : 'me';
+      const res = await fetch(`/api/parent/child-progress/${parentId}`, {
+        headers: getAuthHeaders()
+      });
 
         if (!res.ok) {
           throw new Error(`Failed to load parent data (${res.status})`);
@@ -37,6 +36,7 @@ export const ParentDashboard = ({ activeTab = 'parent_dashboard' }) => {
       }
     };
 
+  useEffect(() => {
     fetchParentProgress();
   }, [currentUser]);
 
@@ -77,10 +77,10 @@ export const ParentDashboard = ({ activeTab = 'parent_dashboard' }) => {
         </div>
         <button
           className="btn-primary"
-          onClick={() => switchRole('parent')}
+          onClick={fetchParentProgress}
           style={{ margin: '0 auto' }}
         >
-          <UserCheck size={16} /> Switch to Rajesh Sharma (Parent)
+          <UserCheck size={16} /> Retry Loading
         </button>
       </div>
     );
@@ -121,7 +121,7 @@ export const ParentDashboard = ({ activeTab = 'parent_dashboard' }) => {
       )}
 
       {/* Verified Parent Banner */}
-      <div className="content-card" style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F9F6 100%)' }}>
+      <div className="content-card" style={{ background: 'linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface-subtle) 100%)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <img

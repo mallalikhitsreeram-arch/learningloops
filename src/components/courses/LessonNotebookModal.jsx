@@ -212,7 +212,7 @@ export const LessonNotebookModal = ({
           style={{
             padding: '10px 20px',
             borderBottom: '1px solid var(--border-subtle)',
-            background: '#ffffff',
+            background: 'var(--bg-surface)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -334,7 +334,7 @@ export const LessonNotebookModal = ({
                             updated[idx] = e.target.value;
                             setImportantPoints(updated);
                           }}
-                          style={{ flex: 1, background: '#fff', borderRadius: '6px', fontSize: '0.84rem' }}
+                          style={{ flex: 1, background: 'var(--bg-surface)', borderRadius: '6px', fontSize: '0.84rem' }}
                         />
                         {importantPoints.length > 1 && (
                           <button
@@ -388,7 +388,7 @@ export const LessonNotebookModal = ({
                             updated[idx] = e.target.value;
                             setDefinitions(updated);
                           }}
-                          style={{ flex: 1, background: '#fff', borderRadius: '6px', fontSize: '0.84rem' }}
+                          style={{ flex: 1, background: 'var(--bg-surface)', borderRadius: '6px', fontSize: '0.84rem' }}
                         />
                         {definitions.length > 1 && (
                           <button
@@ -463,7 +463,7 @@ export const LessonNotebookModal = ({
                       padding: '12px',
                       borderRadius: '8px',
                       border: '1px solid var(--border-subtle)',
-                      background: '#fff',
+                      background: 'var(--bg-surface)',
                       fontSize: '0.84rem',
                       lineHeight: '1.5',
                       boxSizing: 'border-box'
@@ -495,7 +495,7 @@ export const LessonNotebookModal = ({
                       padding: '12px',
                       borderRadius: '8px',
                       border: '1px solid var(--border-subtle)',
-                      background: '#fff',
+                      background: 'var(--bg-surface)',
                       fontSize: '0.84rem',
                       lineHeight: '1.6',
                       boxSizing: 'border-box'
@@ -544,7 +544,7 @@ export const LessonNotebookModal = ({
                             key={qIdx}
                             style={{
                               padding: '14px',
-                              background: '#fff',
+                              background: 'var(--bg-surface)',
                               borderRadius: '8px',
                               border: '1px solid var(--border-subtle)'
                             }}
@@ -612,7 +612,7 @@ export const LessonNotebookModal = ({
           style={{
             padding: '12px 20px',
             borderTop: '1px solid var(--border-subtle)',
-            background: '#ffffff',
+            background: 'var(--bg-surface)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between'

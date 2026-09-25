@@ -1,31 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { KeyRound, Mail, Lock, CheckCircle2, AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { KeyRound, Mail, Lock, CheckCircle2, AlertCircle, ArrowLeft, ArrowRight, RefreshCw, Clock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { sendPasswordResetEmail } from '../../utils/emailService.js';
+
+const RESEND_COOLDOWN_SECONDS = 60;
 
 export const ForgotPasswordPage = () => {
   const { forgotPassword, resetPassword } = useAuth();
 
-  const [step, setStep] = useState(1); // 1: enter email, 2: enter code & new password
+  const [step, setStep] = useState(1); // 1: enter email, 2: enter code & new password, 3: success
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('424242');
+  const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  // Resend cooldown for step 2
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   const handleSendInstructions = async (e) => {
     e.preventDefault();
     setErrorMessage('');
     setIsSubmitting(true);
+
+    // Backend generates & stores a real reset OTP, returns it
     const res = await forgotPassword(email);
     setIsSubmitting(false);
 
     if (res.success) {
-      setMessage(res.message);
+      // Deliver the reset code via EmailJS
+      if (res.otp) {
+        setIsSendingEmail(true);
+        const emailResult = await sendPasswordResetEmail(email, res.otp);
+        setIsSendingEmail(false);
+
+        if (!emailResult.success) {
+          // Still proceed to step 2 — user can request a resend
+          setMessage('Reset code generated, but email delivery had an issue. You can try resending below.');
+        } else {
+          setMessage(`A password reset code has been sent to ${email}. Please check your inbox.`);
+        }
+      } else {
+        setMessage(res.message || 'Reset instructions sent.');
+      }
+
       setStep(2);
+      setCooldown(RESEND_COOLDOWN_SECONDS);
     } else {
       setErrorMessage(res.error || 'Failed to send reset code.');
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (cooldown > 0) return;
+    setErrorMessage('');
+    setIsSubmitting(true);
+
+    const res = await forgotPassword(email);
+    setIsSubmitting(false);
+
+    if (res.success && res.otp) {
+      setIsSendingEmail(true);
+      await sendPasswordResetEmail(email, res.otp);
+      setIsSendingEmail(false);
+      setMessage('A new reset code has been sent to your email.');
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+      setCode('');
+    } else {
+      setErrorMessage(res.error || 'Failed to resend reset code.');
     }
   };
 
@@ -44,6 +95,8 @@ export const ForgotPasswordPage = () => {
     }
   };
 
+  const loadingLabel = isSendingEmail ? 'Sending email...' : isSubmitting ? 'Sending...' : null;
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -56,7 +109,8 @@ export const ForgotPasswordPage = () => {
       <div style={{
         maxWidth: '460px',
         width: '100%',
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--bg-surface)',
+        color: 'var(--text-primary)',
         borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-lg)',
@@ -120,6 +174,7 @@ export const ForgotPasswordPage = () => {
           </div>
         )}
 
+        {/* Step 1: Enter email */}
         {step === 1 && (
           <form onSubmit={handleSendInstructions} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
@@ -142,27 +197,30 @@ export const ForgotPasswordPage = () => {
             <button
               type="submit"
               className="btn-primary"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isSendingEmail}
               style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.9rem' }}
             >
-              <span>{isSubmitting ? 'Sending...' : 'Send Reset Instructions'}</span>
+              <span>{loadingLabel || 'Send Reset Code'}</span>
               <ArrowRight size={16} />
             </button>
           </form>
         )}
 
+        {/* Step 2: Enter code & new password */}
         {step === 2 && (
           <form onSubmit={handleReset} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '4px' }}>
-                Verification Code (Demo: 424242)
+                Reset Code (from your email)
               </label>
               <input
                 type="text"
                 required
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: '0.9rem', textAlign: 'center', letterSpacing: '0.15em' }}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="6-digit code"
+                autoFocus
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: '1rem', textAlign: 'center', letterSpacing: '0.15em', fontWeight: '700' }}
               />
             </div>
 
@@ -187,15 +245,37 @@ export const ForgotPasswordPage = () => {
             <button
               type="submit"
               className="btn-primary"
-              disabled={isSubmitting}
+              disabled={isSubmitting || code.length !== 6}
               style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.9rem' }}
             >
               <span>{isSubmitting ? 'Updating...' : 'Set New Password'}</span>
               <ArrowRight size={16} />
             </button>
+
+            {/* Resend option for step 2 */}
+            <div style={{ textAlign: 'center', paddingTop: '4px' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleResendCode}
+                disabled={cooldown > 0 || isSubmitting || isSendingEmail}
+                style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+              >
+                <RefreshCw size={13} className={isSendingEmail ? 'spin-animation' : ''} />
+                <span>
+                  {isSendingEmail
+                    ? 'Sending...'
+                    : cooldown > 0
+                      ? `Resend in ${cooldown}s`
+                      : 'Resend reset code'}
+                </span>
+                {cooldown > 0 && <Clock size={13} />}
+              </button>
+            </div>
           </form>
         )}
 
+        {/* Step 3: Success */}
         {step === 3 && (
           <div style={{ textAlign: 'center', padding: '12px 0' }}>
             <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent-sage-light)', color: 'var(--accent-sage)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>

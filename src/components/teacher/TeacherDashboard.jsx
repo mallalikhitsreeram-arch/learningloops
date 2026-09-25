@@ -38,10 +38,10 @@ export const TeacherDashboard = ({ activeTab = 'teacher_overview', onSubTabChang
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header Banner */}
-      <div className="content-card" style={{ background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F7FA 100%)' }}>
+      <div className="content-card" style={{ background: 'linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface-subtle) 100%)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-navy)', fontWeight: '700', fontSize: '0.8rem', textTransform: 'uppercase' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-green)', fontWeight: '700', fontSize: '0.8rem', textTransform: 'uppercase' }}>
               <GraduationCap size={18} />
               <span>Faculty Academic Portal</span>
             </div>
@@ -61,7 +61,7 @@ export const TeacherDashboard = ({ activeTab = 'teacher_overview', onSubTabChang
                 borderRadius: 'var(--radius-sm)',
                 fontSize: '0.8rem',
                 fontWeight: activeSubTab === 'overview' ? '700' : '500',
-                background: activeSubTab === 'overview' ? '#fff' : 'transparent',
+                background: activeSubTab === 'overview' ? 'var(--bg-surface)' : 'transparent',
                 color: activeSubTab === 'overview' ? 'var(--text-primary)' : 'var(--text-muted)'
               }}
               onClick={() => { setActiveSubTab('overview'); if (onSubTabChange) onSubTabChange('teacher_overview'); }}
@@ -75,7 +75,7 @@ export const TeacherDashboard = ({ activeTab = 'teacher_overview', onSubTabChang
                 borderRadius: 'var(--radius-sm)',
                 fontSize: '0.8rem',
                 fontWeight: activeSubTab === 'test_builder' ? '700' : '500',
-                background: activeSubTab === 'test_builder' ? '#fff' : 'transparent',
+                background: activeSubTab === 'test_builder' ? 'var(--bg-surface)' : 'transparent',
                 color: activeSubTab === 'test_builder' ? 'var(--text-primary)' : 'var(--text-muted)'
               }}
               onClick={() => { setActiveSubTab('test_builder'); if (onSubTabChange) onSubTabChange('teacher_test_builder'); }}
@@ -89,7 +89,7 @@ export const TeacherDashboard = ({ activeTab = 'teacher_overview', onSubTabChang
                 borderRadius: 'var(--radius-sm)',
                 fontSize: '0.8rem',
                 fontWeight: activeSubTab === 'analytics' ? '700' : '500',
-                background: activeSubTab === 'analytics' ? '#fff' : 'transparent',
+                background: activeSubTab === 'analytics' ? 'var(--bg-surface)' : 'transparent',
                 color: activeSubTab === 'analytics' ? 'var(--text-primary)' : 'var(--text-muted)'
               }}
               onClick={() => { setActiveSubTab('analytics'); if (onSubTabChange) onSubTabChange('teacher_analytics'); }}
@@ -103,7 +103,7 @@ export const TeacherDashboard = ({ activeTab = 'teacher_overview', onSubTabChang
                 borderRadius: 'var(--radius-sm)',
                 fontSize: '0.8rem',
                 fontWeight: activeSubTab === 'resources' ? '700' : '500',
-                background: activeSubTab === 'resources' ? '#fff' : 'transparent',
+                background: activeSubTab === 'resources' ? 'var(--bg-surface)' : 'transparent',
                 color: activeSubTab === 'resources' ? 'var(--text-primary)' : 'var(--text-muted)'
               }}
               onClick={() => { setActiveSubTab('resources'); if (onSubTabChange) onSubTabChange('teacher_resources'); }}
@@ -117,7 +117,7 @@ export const TeacherDashboard = ({ activeTab = 'teacher_overview', onSubTabChang
                 borderRadius: 'var(--radius-sm)',
                 fontSize: '0.8rem',
                 fontWeight: activeSubTab === 'youtube' ? '700' : '500',
-                background: activeSubTab === 'youtube' ? '#fff' : 'transparent',
+                background: activeSubTab === 'youtube' ? 'var(--bg-surface)' : 'transparent',
                 color: activeSubTab === 'youtube' ? 'var(--text-primary)' : 'var(--text-muted)',
                 display: 'flex',
                 alignItems: 'center',
@@ -125,7 +125,7 @@ export const TeacherDashboard = ({ activeTab = 'teacher_overview', onSubTabChang
               }}
               onClick={() => { setActiveSubTab('youtube'); if (onSubTabChange) onSubTabChange('teacher_youtube'); }}
             >
-              <Video size={14} color={activeSubTab === 'youtube' ? '#DC2626' : undefined} />
+              <Video size={14} color={activeSubTab === 'youtube' ? 'var(--accent-coral)' : undefined} />
               <span>YouTube Videos</span>
             </button>
           </div>

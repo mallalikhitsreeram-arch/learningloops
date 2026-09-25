@@ -99,7 +99,7 @@ export const InterviewLabView = () => {
       <div className="content-card" style={{
         padding: '32px',
         borderRadius: 'var(--radius-lg)',
-        background: 'linear-gradient(135deg, #FFFFFF 0%, var(--bg-surface-subtle) 100%)',
+        background: 'linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface-subtle) 100%)',
         border: '1px solid var(--border-subtle)',
         display: 'grid',
         gridTemplateColumns: '1.4fr 0.8fr',
@@ -172,7 +172,7 @@ export const InterviewLabView = () => {
 
         {/* Right Info Highlights */}
         <div style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--bg-surface-elevated)',
           padding: '24px',
           borderRadius: 'var(--radius-md)',
           border: '1px solid var(--border-subtle)',
@@ -201,8 +201,8 @@ export const InterviewLabView = () => {
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
             <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Input Modality</span>
-            <span style={{ fontSize: '0.84rem', fontWeight: '700', color: 'var(--accent-sage)' }}>
-              📷 Camera + 🎤 Microphone
+            <span style={{ fontSize: '0.84rem', fontWeight: '700', color: 'var(--accent-sage)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <Video size={14} /> Camera + <Mic size={14} /> Microphone
             </span>
           </div>
 
@@ -320,7 +320,7 @@ export const InterviewLabView = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  backgroundColor: '#fff'
+                  backgroundColor: 'var(--bg-surface-elevated)'
                 }}
               >
                 <div>

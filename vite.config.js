@@ -5,8 +5,8 @@ const isProd = process.env.NODE_ENV === 'production';
 
 export default defineConfig({
   plugins: [react()],
-  // Required for GitHub Pages — assets load from /learningloops/ path
-  base: isProd ? '/learningloops/' : '/',
+  // Base path: root '/' for Vercel & local development, '/learningloops/' only if GITHUB_PAGES is set
+  base: process.env.GITHUB_PAGES ? '/learningloops/' : '/',
   server: {
     port: 5173,
     host: true,

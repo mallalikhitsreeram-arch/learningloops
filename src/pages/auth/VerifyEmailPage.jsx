@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Mail, CheckCircle2, AlertCircle, RefreshCw, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Mail, CheckCircle2, AlertCircle, RefreshCw, ArrowLeft, ArrowRight, Clock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { sendOTPEmail } from '../../utils/emailService.js';
+
+const RESEND_COOLDOWN_SECONDS = 60;
 
 export const VerifyEmailPage = () => {
   const navigate = useNavigate();
@@ -9,11 +12,21 @@ export const VerifyEmailPage = () => {
   const { verifyEmail, resendVerification } = useAuth();
 
   const email = searchParams.get('email') || 'your account email';
-  const [code, setCode] = useState('424242'); // Auto-fill demo verification code
+
+  const [code, setCode] = useState('');
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
+
+  // Resend cooldown timer
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -37,11 +50,33 @@ export const VerifyEmailPage = () => {
   };
 
   const handleResend = async () => {
+    if (cooldown > 0 || isResending) return;
     setIsResending(true);
     setErrorMessage('');
+    setMessage('');
+
+    // Backend generates a fresh OTP and returns it
     const res = await resendVerification(email);
     setIsResending(false);
-    setMessage(res.message || 'Verification code resent! Check your inbox.');
+
+    if (res.success) {
+      // Deliver the new OTP via EmailJS
+      if (res.otp) {
+        const emailResult = await sendOTPEmail(email, res.otp);
+        if (emailResult.success) {
+          setMessage('A new verification code has been sent to your email. Please check your inbox.');
+        } else {
+          setMessage('Code regenerated, but email delivery failed. Please try again shortly.');
+        }
+      } else {
+        setMessage(res.message || 'Verification code resent! Check your inbox.');
+      }
+      // Start cooldown regardless
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+      setCode('');
+    } else {
+      setErrorMessage(res.error || 'Failed to resend verification code.');
+    }
   };
 
   return (
@@ -56,7 +91,8 @@ export const VerifyEmailPage = () => {
       <div style={{
         maxWidth: '460px',
         width: '100%',
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--bg-surface)',
+        color: 'var(--text-primary)',
         borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-lg)',
@@ -82,7 +118,7 @@ export const VerifyEmailPage = () => {
         </h2>
 
         <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: '1.5' }}>
-          We sent a verification code to <strong>{email}</strong>. Please enter the 6-digit code below to unlock your Learning Loop dashboard.
+          We sent a 6-digit verification code to <strong>{email}</strong>. Please check your inbox and enter the code below.
         </p>
 
         {errorMessage && (
@@ -123,16 +159,17 @@ export const VerifyEmailPage = () => {
 
         <form onSubmit={handleVerify} style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
-            <div style={{ fontSize: '0.76rem', color: 'var(--accent-sage)', fontWeight: '600', marginBottom: '4px' }}>
-              Demo Verification Code: <strong>424242</strong>
-            </div>
+            <label style={{ fontSize: '0.8rem', fontWeight: '600', display: 'block', marginBottom: '6px', textAlign: 'left' }}>
+              6-Digit Verification Code
+            </label>
             <input
               type="text"
               required
               maxLength={6}
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="424242"
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="Enter code from your email"
+              autoFocus
               style={{
                 width: '100%',
                 padding: '12px',
@@ -149,7 +186,7 @@ export const VerifyEmailPage = () => {
           <button
             type="submit"
             className="btn-primary"
-            disabled={isSubmitting}
+            disabled={isSubmitting || code.length !== 6}
             style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '0.9rem' }}
           >
             <span>{isSubmitting ? 'Verifying...' : 'Verify & Continue to Dashboard'}</span>
@@ -157,16 +194,23 @@ export const VerifyEmailPage = () => {
           </button>
         </form>
 
-        <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: '24px', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: '24px', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <button
             type="button"
             className="btn-secondary"
             onClick={handleResend}
-            disabled={isResending}
+            disabled={isResending || cooldown > 0}
             style={{ fontSize: '0.8rem', padding: '6px 12px' }}
           >
             <RefreshCw size={13} className={isResending ? 'spin-animation' : ''} />
-            <span>Resend verification email</span>
+            <span>
+              {isResending
+                ? 'Sending...'
+                : cooldown > 0
+                  ? `Resend in ${cooldown}s`
+                  : 'Resend verification email'}
+            </span>
+            {cooldown > 0 && <Clock size={13} />}
           </button>
 
           <Link to="/login" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: '600' }}>

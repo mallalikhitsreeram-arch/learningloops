@@ -33,12 +33,15 @@ export const ProtectedRoute = ({ children, allowedRoles = null }) => {
     );
   }
 
-  // Requirement 2: Protected route gateway - unauthenticated visitors go to /login
+  // Unauthenticated — decide where to send them
   if (!isAuthenticated || !currentUser) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // Admin routes redirect to the dedicated admin login, not the public login
+    const isAdminRoute = location.pathname.startsWith('/admin');
+    const loginTarget  = isAdminRoute ? '/admin-login' : '/login';
+    return <Navigate to={loginTarget} state={{ from: location }} replace />;
   }
 
-  // Requirement 5: If account is unverified, block access to any protected dashboard
+  // Block access to any protected dashboard if email unverified
   if (currentUser.email_verified === false) {
     return <Navigate to={`/verify-email?email=${encodeURIComponent(currentUser.email || '')}`} replace />;
   }
@@ -58,3 +61,4 @@ export const ProtectedRoute = ({ children, allowedRoles = null }) => {
 
   return children;
 };
+

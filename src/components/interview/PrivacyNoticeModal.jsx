@@ -20,7 +20,8 @@ export const PrivacyNoticeModal = ({ isOpen, onClose }) => {
       padding: '16px'
     }}>
       <div style={{
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'var(--bg-surface)',
+        color: 'var(--text-primary)',
         borderRadius: 'var(--radius-lg)',
         maxWidth: '560px',
         width: '100%',

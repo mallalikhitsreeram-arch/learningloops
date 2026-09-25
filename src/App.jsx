@@ -4,12 +4,17 @@ import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { NetworkProvider, useNetwork } from './context/NetworkContext.jsx';
 import { LanguageProvider, useLanguage } from './context/LanguageContext.jsx';
 import { DataSaverProvider } from './context/DataSaverContext.jsx';
+import { ThemeProvider } from './context/ThemeContext.jsx';
 
 import { LoginPage } from './pages/auth/LoginPage.jsx';
 import { RegisterPage } from './pages/auth/RegisterPage.jsx';
 import { VerifyEmailPage } from './pages/auth/VerifyEmailPage.jsx';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage.jsx';
 import { StudentOnboardingPage } from './pages/auth/StudentOnboardingPage.jsx';
+import { LandingPage } from './pages/LandingPage.jsx';
+import { DemoPage } from './pages/DemoPage.jsx';
+import { PortalSelectionPage } from './pages/PortalSelectionPage.jsx';
+import { AdminLoginPage } from './pages/auth/AdminLoginPage.jsx';
 import { ProtectedRoute } from './components/auth/ProtectedRoute.jsx';
 
 import { Navbar } from './components/layout/Navbar.jsx';
@@ -17,6 +22,7 @@ import { Sidebar } from './components/layout/Sidebar.jsx';
 import { OfflineBanner } from './components/layout/OfflineBanner.jsx';
 import { HelpModal } from './components/layout/HelpModal.jsx';
 
+import { StudentDashboard } from './components/dashboard/StudentDashboard.jsx';
 import { KpiCards } from './components/dashboard/KpiCards.jsx';
 import { DailyGoalCard } from './components/dashboard/DailyGoalCard.jsx';
 import { ActivityCalendar } from './components/dashboard/ActivityCalendar.jsx';
@@ -39,59 +45,47 @@ import { ParentDashboard } from './components/parent/ParentDashboard.jsx';
 import { AdminDashboard } from './components/admin/AdminDashboard.jsx';
 
 import { OnboardingModal } from './components/auth/OnboardingModal.jsx';
-import { FloatingAiAssistant } from './components/ai/FloatingAiAssistant.jsx';
 
-// Requirement 1 & 6: Root route handler
-const RootRedirect = () => {
-  const { currentUser, isAuthenticated, isLoading } = useAuth();
+// New student feature pages
+import { StudentConnectionView } from './components/student/StudentConnectionView.jsx';
+import { InternshipsView } from './components/student/InternshipsView.jsx';
+import { ProjectCollabView } from './components/student/ProjectCollabView.jsx';
+import { WellbeingView } from './components/student/WellbeingView.jsx';
 
-  if (isLoading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ width: '40px', height: '40px', border: '3px solid var(--border-subtle)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
-          <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Loading LEARNING LOOPS...</div>
-        </div>
-      </div>
-    );
-  }
+// Focus Mode
+import { useFocusSession } from './components/focusmode/useFocusSession.js';
+import { FocusSetupModal } from './components/focusmode/FocusSetupModal.jsx';
+import { FloatingFocusWidget } from './components/focusmode/FloatingFocusWidget.jsx';
+import { FocusCompletionModal } from './components/focusmode/FocusCompletionModal.jsx';
 
-  // Unauthenticated user -> immediately show Login
-  if (!isAuthenticated || !currentUser) {
-    return <Navigate to="/login" replace />;
-  }
+// ─── Root Route ─────────────────────────────────────────────────────────────
+// LandingPage handles both cases:
+//   • Unauthenticated → shows the landing/welcome page
+//   • Authenticated   → internally redirects to the correct portal
 
-  // Unverified user -> verify email
-  if (currentUser.email_verified === false) {
-    return <Navigate to={`/verify-email?email=${encodeURIComponent(currentUser.email || '')}`} replace />;
-  }
-
-  // Authenticated user -> role dashboard or onboarding
-  if (currentUser.role === 'teacher') return <Navigate to="/teacher" replace />;
-  if (currentUser.role === 'parent') return <Navigate to="/parent" replace />;
-  if (currentUser.role === 'admin') return <Navigate to="/admin" replace />;
-  if (currentUser.role === 'student' && currentUser.profileCompleted === false) {
-    return <Navigate to="/onboarding" replace />;
-  }
-  return <Navigate to="/dashboard" replace />;
-};
-
-// Protected Application Layout (Navbar + Sidebar + Sub-Routes)
+// ─── Protected App Layout ────────────────────────────────────────────────────
 const ProtectedAppLayout = () => {
   const { currentUser, getAuthHeaders, isOnboardingModalOpen, setIsOnboardingModalOpen } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [activeLessonContext, setActiveLessonContext] = useState(null);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [practiceTopic, setPracticeTopic] = useState(null);
   const [teacherSubTab, setTeacherSubTab] = useState('teacher_overview');
-
-  // Student dashboard state
   const [dashboardData, setDashboardData] = useState(null);
+
+  // Focus Mode session
+  const focusSession = useFocusSession();
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setIsMobileSidebarOpen(false);
+  }, [location.pathname]);
 
   // Determine active tab from route
   const getActiveTab = () => {
@@ -110,6 +104,10 @@ const ProtectedAppLayout = () => {
     if (path.startsWith('/notifications')) return 'notifications';
     if (path.startsWith('/settings')) return 'settings';
     if (path.startsWith('/profile')) return 'profile';
+    if (path.startsWith('/student-connection')) return 'student_connection';
+    if (path.startsWith('/internships')) return 'internships';
+    if (path.startsWith('/projects')) return 'projects';
+    if (path.startsWith('/wellbeing')) return 'wellbeing';
     if (path.startsWith('/teacher')) return teacherSubTab || 'teacher_overview';
     if (path.startsWith('/parent')) return 'parent_dashboard';
     if (path.startsWith('/admin')) return 'admin_overview';
@@ -120,16 +118,9 @@ const ProtectedAppLayout = () => {
 
   const fetchDashboard = () => {
     if (currentUser && currentUser.role === 'student') {
-      fetch('/api/student/me/dashboard', {
-        headers: getAuthHeaders()
-      })
-        .then(res => {
-          if (!res.ok) return null;
-          return res.json();
-        })
-        .then(data => {
-          if (data) setDashboardData(data);
-        })
+      fetch('/api/student/me/dashboard', { headers: getAuthHeaders() })
+        .then(res => { if (!res.ok) return null; return res.json(); })
+        .then(data => { if (data) setDashboardData(data); })
         .catch(() => {});
     }
   };
@@ -145,14 +136,8 @@ const ProtectedAppLayout = () => {
   }, [currentUser]);
 
   const handleTabSelect = (tab) => {
-    if (tab === 'ai') {
-      setIsAiModalOpen(true);
-      return;
-    }
-    if (tab === 'help') {
-      setIsHelpModalOpen(true);
-      return;
-    }
+    if (tab === 'ai') { setIsAiModalOpen(true); return; }
+    if (tab === 'help') { setIsHelpModalOpen(true); return; }
 
     setSelectedCourse(null);
 
@@ -172,18 +157,23 @@ const ProtectedAppLayout = () => {
       'notifications': '/notifications',
       'settings': '/settings',
       'profile': '/profile',
+      'student_connection': '/student-connection',
+      'internships': '/internships',
+      'projects': '/projects',
+      'wellbeing': '/wellbeing',
       'teacher_overview': '/teacher',
       'teacher_classes': '/teacher',
       'teacher_tests': '/teacher',
+      'teacher_test_builder': '/teacher',
       'teacher_analytics': '/teacher',
       'teacher_resources': '/teacher',
       'parent_dashboard': '/parent',
-      'admin_overview': '/admin'
+      'parent_calendar': '/parent',
+      'admin_overview': '/admin',
+      'admin_users': '/admin',
     };
 
-    if (tab.startsWith('teacher_')) {
-      setTeacherSubTab(tab);
-    }
+    if (tab.startsWith('teacher_')) setTeacherSubTab(tab);
 
     const targetRoute = routeMap[tab] || `/${tab}`;
     navigate(targetRoute);
@@ -199,14 +189,8 @@ const ProtectedAppLayout = () => {
     if (item.category === 'courses') {
       fetch(`/api/courses/${item.id}`)
         .then(res => res.json())
-        .then(course => {
-          setSelectedCourse(course);
-          navigate('/courses');
-        })
-        .catch(() => {
-          setSelectedCourse(null);
-          navigate('/courses');
-        });
+        .then(course => { setSelectedCourse(course); navigate('/courses'); })
+        .catch(() => { setSelectedCourse(null); navigate('/courses'); });
     } else if (item.category === 'practice') {
       handlePracticeWeakTopic(item.topic);
     } else if (item.category === 'resources') {
@@ -217,12 +201,23 @@ const ProtectedAppLayout = () => {
 
   return (
     <div className="app-container">
-      {/* Sidebar Navigation */}
+      {/* Mobile overlay */}
+      {isMobileSidebarOpen && (
+        <div
+          className="sidebar-overlay visible"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
       <Sidebar
         activeTab={activeTab}
         onSelectTab={handleTabSelect}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        isMobileOpen={isMobileSidebarOpen}
+        onMobileClose={() => setIsMobileSidebarOpen(false)}
+        onOpenFocus={currentUser?.role === 'student' ? focusSession.openSetup : undefined}
       />
 
       <div className="main-content">
@@ -230,62 +225,34 @@ const ProtectedAppLayout = () => {
         <Navbar
           onOpenAi={() => setIsAiModalOpen(true)}
           onSelectSearchResult={handleSearchSelection}
+          onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
         />
 
-        {/* Persistent Offline Banner */}
+        {/* Offline Banner */}
         <OfflineBanner
-          onGoToDownloads={() => {
-            setSelectedCourse(null);
-            navigate('/downloads');
-          }}
+          onGoToDownloads={() => { setSelectedCourse(null); navigate('/downloads'); }}
         />
 
         {/* Page Content */}
         <main className="page-wrapper">
           <Routes>
-            {/* STUDENT PROTECTED ROUTES */}
+            {/* ── STUDENT ROUTES ── */}
             <Route path="/dashboard" element={
               <ProtectedRoute allowedRoles={['student']}>
-                <div className="dashboard-grid">
-                  {/* Personalized Welcome Banner */}
-                  <div className="dashboard-welcome-banner" style={{ marginBottom: '4px' }}>
-                    <h1 style={{ fontSize: '1.4rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
-                      Welcome back, {dashboardData?.user?.name ? dashboardData.user.name.split(' ')[0] : (currentUser?.name ? currentUser.name.split(' ')[0] : 'Student')}!
-                    </h1>
-                    <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-                      Here is your learning summary for today. Keep up your {dashboardData?.student?.learningStreak || dashboardData?.kpis?.currentStreak || 0}-day streak!
-                    </p>
-                  </div>
-                  <KpiCards kpis={dashboardData?.kpis} student={dashboardData?.student} />
-                  <DailyGoalCard
-                    dailyGoal={dashboardData?.dailyGoal}
-                    onContinueLearning={() => { setSelectedCourse(null); navigate('/courses'); }}
-                    onPracticeNow={() => { setSelectedCourse(null); navigate('/practice'); }}
-                  />
-                  <SmartRecommendations
-                    recommendations={dashboardData?.recommendations || []}
-                    onAction={(rec) => {
-                      if (rec.actionTopic) handlePracticeWeakTopic(rec.actionTopic);
-                      else { setSelectedCourse(null); navigate('/courses'); }
-                    }}
-                  />
-                  <ActivityCalendar history={dashboardData?.activityHistory || dashboardData?.activityCalendar || []} />
-                  <ProgressCharts topicPerformance={dashboardData?.topicPerformance} onPracticeTopic={handlePracticeWeakTopic} />
-                </div>
+              <StudentDashboard
+                  dashboardData={dashboardData}
+                  currentUser={currentUser}
+                  onNavigate={(tab) => handleTabSelect(tab)}
+                  onPracticeWeakTopic={handlePracticeWeakTopic}
+                  onOpenFocus={focusSession.openSetup}
+                />
               </ProtectedRoute>
             } />
 
             <Route path="/my-learning" element={
               <ProtectedRoute allowedRoles={['student']}>
                 {selectedCourse ? (
-                  <CourseDetail
-                    course={selectedCourse}
-                    onBack={() => {
-                      setSelectedCourse(null);
-                      setActiveLessonContext(null);
-                    }}
-                    onActiveContextChange={setActiveLessonContext}
-                  />
+                  <CourseDetail course={selectedCourse} onBack={() => { setSelectedCourse(null); setActiveLessonContext(null); }} onActiveContextChange={setActiveLessonContext} />
                 ) : (
                   <CourseList onSelectCourse={(c) => setSelectedCourse(c)} initialFilter="enrolled" />
                 )}
@@ -295,14 +262,7 @@ const ProtectedAppLayout = () => {
             <Route path="/courses" element={
               <ProtectedRoute allowedRoles={['student']}>
                 {selectedCourse ? (
-                  <CourseDetail
-                    course={selectedCourse}
-                    onBack={() => {
-                      setSelectedCourse(null);
-                      setActiveLessonContext(null);
-                    }}
-                    onActiveContextChange={setActiveLessonContext}
-                  />
+                  <CourseDetail course={selectedCourse} onBack={() => { setSelectedCourse(null); setActiveLessonContext(null); }} onActiveContextChange={setActiveLessonContext} />
                 ) : (
                   <CourseList onSelectCourse={(c) => setSelectedCourse(c)} initialFilter="all" />
                 )}
@@ -338,10 +298,7 @@ const ProtectedAppLayout = () => {
                 <OfflineDownloadsView
                   selectedCourse={selectedCourse}
                   onSelectCourse={(c) => setSelectedCourse(c)}
-                  onBackCourse={() => {
-                    setSelectedCourse(null);
-                    setActiveLessonContext(null);
-                  }}
+                  onBackCourse={() => { setSelectedCourse(null); setActiveLessonContext(null); }}
                   onActiveContextChange={setActiveLessonContext}
                 />
               </ProtectedRoute>
@@ -385,12 +342,15 @@ const ProtectedAppLayout = () => {
                       { id: '3', title: 'Resource Uploaded', desc: 'Prof. Ramanujan uploaded "C Pointer & Memory Guide (PDF)".', time: 'Yesterday' },
                       { id: '4', title: 'Official Certificate Accredited', desc: 'Certificate for Java Core & Enterprise is ready to view & download.', time: '3d ago' }
                     ]).map((n, idx) => (
-                      <div key={idx} style={{ padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div key={idx} style={{ padding: '14px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'background 0.15s ease' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-surface-subtle)'}
+                        onMouseLeave={e => e.currentTarget.style.background = ''}
+                      >
                         <div>
                           <div style={{ fontWeight: '700', fontSize: '0.92rem' }}>{n.title}</div>
                           <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{n.desc}</div>
                         </div>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{n.time || 'Recent'}</span>
+                        <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', flexShrink: 0, marginLeft: '12px' }}>{n.time || 'Recent'}</span>
                       </div>
                     ))}
                   </div>
@@ -404,35 +364,66 @@ const ProtectedAppLayout = () => {
               </ProtectedRoute>
             } />
 
-            {/* SHARED SETTINGS ROUTE */}
-            <Route path="/settings" element={<SettingsView />} />
-
-            {/* TEACHER PROTECTED ROUTE */}
-            <Route path="/teacher/*" element={
-              <ProtectedRoute allowedRoles={['teacher']}>
-                <TeacherDashboard
-                  activeTab={teacherSubTab}
-                  onSubTabChange={(sub) => setTeacherSubTab(sub)}
-                />
+            {/* ── NEW STUDENT FEATURE ROUTES ── */}
+            <Route path="/student-connection" element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <StudentConnectionView onNavigate={handleTabSelect} />
               </ProtectedRoute>
             } />
 
-            {/* PARENT PROTECTED ROUTE */}
+            <Route path="/internships" element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <InternshipsView />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/projects" element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <ProjectCollabView />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/wellbeing" element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <WellbeingView onNavigate={handleTabSelect} />
+              </ProtectedRoute>
+            } />
+
+            {/* ── SHARED ── */}
+            <Route path="/settings" element={<SettingsView />} />
+
+            {/* ── TEACHER ── */}
+            <Route path="/teacher/*" element={
+              <ProtectedRoute allowedRoles={['teacher']}>
+                <TeacherDashboard activeTab={teacherSubTab} onSubTabChange={(sub) => setTeacherSubTab(sub)} />
+              </ProtectedRoute>
+            } />
+
+            {/* ── PARENT ── */}
             <Route path="/parent/*" element={
               <ProtectedRoute allowedRoles={['parent']}>
                 <ParentDashboard activeTab="parent_dashboard" />
               </ProtectedRoute>
             } />
 
-            {/* ADMIN PROTECTED ROUTE */}
+            {/* ── ADMIN ── */}
             <Route path="/admin/*" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminDashboard />
               </ProtectedRoute>
             } />
 
-            {/* Fallback to root redirect */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={
+              <Navigate
+                to={
+                  currentUser?.role === 'teacher' ? '/teacher' :
+                  currentUser?.role === 'parent' ? '/parent' :
+                  currentUser?.role === 'admin' ? '/admin' :
+                  '/dashboard'
+                }
+                replace
+              />
+            } />
           </Routes>
         </main>
       </div>
@@ -441,82 +432,93 @@ const ProtectedAppLayout = () => {
       <OnboardingModal
         isOpen={isOnboardingModalOpen}
         onClose={() => setIsOnboardingModalOpen(false)}
-        onFinish={() => {
-          setIsOnboardingModalOpen(false);
-          fetchDashboard();
-        }}
+        onFinish={() => { setIsOnboardingModalOpen(false); fetchDashboard(); }}
       />
 
-      {/* Global Floating AI Assistant (Pinned to bottom-right across all Student Portal views) */}
-      {currentUser?.role === 'student' && (
-        <FloatingAiAssistant
-          currentPath={location.pathname}
-          selectedCourse={selectedCourse}
-          activeLessonContext={activeLessonContext}
-          isTestActive={location.pathname.startsWith('/tests')}
-          onNavigateToPractice={handlePracticeWeakTopic}
-          onNavigateToCourse={(course) => {
-            setSelectedCourse(course);
-            navigate('/courses');
-          }}
-          onNavigateToInterviewLab={() => {
-            setSelectedCourse(null);
-            setActiveLessonContext(null);
-            navigate('/interview-lab');
-          }}
-        />
-      )}
+      {/* Help Modal */}
+      <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
 
-      {/* Help & FAQ Modal */}
-      <HelpModal
-        isOpen={isHelpModalOpen}
-        onClose={() => setIsHelpModalOpen(false)}
-      />
+      {/* ── FOCUS MODE (student productivity feature, floating background widget) ── */}
+      {currentUser?.role === 'student' && (() => {
+        const {
+          session,
+          screen,
+          endReason,
+          startSession,
+          recordViolation,
+          dismissViolation,
+          completeSession,
+          endSession,
+          closeSetup,
+          updateRemaining
+        } = focusSession;
+
+        return (
+          <>
+            {/* Setup Modal */}
+            {screen === 'setup' && (
+              <FocusSetupModal onStart={startSession} onClose={closeSetup} />
+            )}
+
+            {/* Background Floating Widget during active / violation session */}
+            {(screen === 'active' || screen === 'violation') && session && (
+              <FloatingFocusWidget
+                session={session}
+                onViolation={recordViolation}
+                onDismissViolation={dismissViolation}
+                onUpdateRemaining={updateRemaining}
+                onComplete={completeSession}
+                onEnd={() => endSession('manual')}
+              />
+            )}
+
+            {/* Session Completion Modal Popup */}
+            {screen === 'end' && (
+              <FocusCompletionModal
+                session={session}
+                endReason={endReason}
+                onClose={() => endSession(endReason || 'completed')}
+              />
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 };
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <NetworkProvider>
-          <LanguageProvider>
-            <DataSaverProvider>
-              <Routes>
-                {/* PUBLIC ROUTES */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/verify-email" element={<VerifyEmailPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-
-                {/* PROTECTED ONBOARDING ROUTE */}
-                <Route
-                  path="/onboarding"
-                  element={
-                    <ProtectedRoute>
-                      <StudentOnboardingPage />
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* ROOT ROUTE: Opens /login if unauthenticated, or role dashboard if authenticated */}
-                <Route path="/" element={<RootRedirect />} />
-
-                {/* PROTECTED ROUTES: All internal pages guarded by ProtectedRoute */}
-                <Route
-                  path="/*"
-                  element={
-                    <ProtectedRoute>
-                      <ProtectedAppLayout />
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-            </DataSaverProvider>
-          </LanguageProvider>
-        </NetworkProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <NetworkProvider>
+            <LanguageProvider>
+              <DataSaverProvider>
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/demo" element={<DemoPage />} />
+                  <Route path="/portal-select" element={<PortalSelectionPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/verify-email" element={<VerifyEmailPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  {/* Admin-only login — not linked publicly, accessed directly */}
+                  <Route path="/admin-login" element={<AdminLoginPage />} />
+                  {/* Protected routes */}
+                  <Route path="/onboarding" element={
+                    <ProtectedRoute allowedRoles={['student']}><StudentOnboardingPage /></ProtectedRoute>
+                  } />
+                  <Route path="/*" element={
+                    <ProtectedRoute><ProtectedAppLayout /></ProtectedRoute>
+                  } />
+                </Routes>
+              </DataSaverProvider>
+            </LanguageProvider>
+          </NetworkProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }

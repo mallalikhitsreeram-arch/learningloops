@@ -198,7 +198,8 @@ export const AuthProvider = ({ children }) => {
       if (!res.ok || !data.success) {
         return { success: false, error: data.error || 'Registration failed' };
       }
-      return { success: true, unverified: true, email: data.email, message: data.message };
+      // Pass through otp so the page can deliver it via EmailJS
+      return { success: true, unverified: true, email: data.email, otp: data.otp, message: data.message };
     } catch (err) {
       return { success: false, error: err.message || 'Network error' };
     }
@@ -225,7 +226,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Resend verification
+  // Resend verification — passes through otp so the page can re-send via EmailJS
   const resendVerification = async (email) => {
     try {
       const res = await fetch('/api/auth/resend-verification', {
@@ -233,13 +234,14 @@ export const AuthProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
-      return await res.json();
+      const data = await res.json();
+      return data; // includes { success, otp, message }
     } catch (err) {
       return { success: false, error: err.message };
     }
   };
 
-  // Forgot password
+  // Forgot password — passes through otp so the page can deliver it via EmailJS
   const forgotPassword = async (email) => {
     try {
       const res = await fetch('/api/auth/forgot-password', {
@@ -247,7 +249,8 @@ export const AuthProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
-      return await res.json();
+      const data = await res.json();
+      return data; // includes { success, otp, message }
     } catch (err) {
       return { success: false, error: err.message };
     }
@@ -267,10 +270,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Quick switch role for dev/testing when logged in
-  const switchRole = async (targetRole) => {
-    const res = await loginDemo(targetRole, true);
-    return res;
+  // Strict role security: role switching is prohibited
+  const switchRole = async () => {
+    console.warn('Security policy: Direct role switching is prohibited. Each account has one registered role.');
+    return { success: false, error: 'Unauthorized: Role switching is prohibited.' };
   };
 
   // Logout
