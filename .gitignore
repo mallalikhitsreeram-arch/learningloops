@@ -39,3 +39,5 @@ $RECYCLE.BIN/
 
 # Vite cache
 .vite/
+
+.vercel

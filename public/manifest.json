@@ -1,0 +1,15 @@
+{
+  "short_name": "LearningLoops",
+  "name": "LEARNING LOOPS — Smart Education Platform",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0A1628",
+  "theme_color": "#1E2022",
+  "display": "standalone"
+}
